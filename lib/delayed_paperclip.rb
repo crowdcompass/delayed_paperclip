@@ -19,6 +19,7 @@ module DelayedPaperclip
       return DelayedPaperclip::Jobs::DelayedJob if defined? ::Delayed::Job
       return DelayedPaperclip::Jobs::Resque     if defined? ::Resque
       return DelayedPaperclip::Jobs::Sidekiq    if defined? ::Sidekiq
+      return DelayedPaperclip::Jobs::Woodhouse  if defined? ::Woodhouse
     end
 
     def processor
