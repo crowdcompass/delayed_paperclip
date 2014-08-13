@@ -61,6 +61,7 @@ module DelayedPaperclip
         self.job_is_processing = true
         self.post_processing = true
         reprocess!(*delayed_only_process)
+        handle_errors
         self.job_is_processing = false
         update_processing_column
       end
@@ -93,6 +94,17 @@ module DelayedPaperclip
           instance.send("#{name}_processing=", false)
           instance.class.where(instance.class.primary_key => instance.id).update_all({ "#{name}_processing" => false })
         end
+      end
+
+      def handle_errors
+        processing_errors = @errors[:processing] || []
+        if error_handler && processing_errors.any?
+          error_handler.call(self, processing_errors)
+        end
+      end
+
+      def error_handler
+        delayed_options[:on_error]
       end
 
     end

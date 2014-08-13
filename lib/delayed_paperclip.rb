@@ -59,7 +59,8 @@ module DelayedPaperclip
         :only_process => only_process_default,
         :url_with_processing => DelayedPaperclip.options[:url_with_processing],
         :processing_image_url => DelayedPaperclip.options[:processing_image_url],
-        :queue => nil
+        :queue => nil,
+        :on_error => nil,
       }.each do |option, default|
 
         paperclip_definitions[name][:delayed][option] = options.key?(option) ? options[option] : default

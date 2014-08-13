@@ -165,6 +165,22 @@ You can process some styles in the foreground and some in the background by sett
   end
 </code></pre>
 
+h4. Error handling
+
+You can define an error handler to be called if `:whiny => true` is set on the attachment and errors occur during processing. Any object that response to `#call` can be used.
+
+<pre><code>
+  class User < ActiveRecord::Base
+    has_attached_file :avatar, :styles => { :small => "25x25#", :medium => "50x50x" }
+
+    process_in_background :avatar, :on_error => lambda {|a, errors| raise "Something bad happened" }
+  end
+</pre></code>
+
+`errors` is an array of error strings. Unfortunately, they tend to just be the names of exceptions. This is a limitation of Paperclip.
+
+The error handler is called before the processing flag is set back to false.
+
 h4. Reprocess Without Delay
 
 This is useful if you don't want the background job.  It accepts individual styles to.  Take note, normal `reprocess!` does not accept
