@@ -102,6 +102,35 @@ being processed.
 
 </code></pre>
 
+h4. Have processing? status available, but construct image URLs as if delayed_paperclip wasn't present
+
+If you define the #{attachment_name}_processing column, but set the url_with_processing option to false,
+this opens up other options (other than modifying the url that paperclip returns) for giving feedback to
+the user while the image is processing.  This is useful for advanced situations, for example when dealing
+with caching systems.
+
+Note especially the method .processing? which passes through the value of the boolean created via migration.
+
+<pre><code>
+
+  class User < ActiveRecord::Base
+    has_attached_file :avatar
+
+    process_in_background :avatar, :url_with_processing => false
+  end
+
+  @user = User.new(:avatar => File.new(...))
+  @user.save
+  @user.avatar.url #=> "/system/images/3/original/IMG_2772.JPG?1267562148"
+  @user.avatar.processing? #=> true
+  Delayed::Worker.new.work_off
+
+  @user.reload
+  @user.avatar.url #=> "/system/images/3/original/IMG_2772.JPG?1267562148"
+  @user.avatar.processing? #=> false
+
+</code></pre>
+
 h4. Only process certain styles
 
 This is useful if you don't want the background job to reprocess all styles.
@@ -111,6 +140,16 @@ This is useful if you don't want the background job to reprocess all styles.
     has_attached_file :avatar, :styles => { :small => "25x25#", :medium => "50x50x" }
 
     process_in_background :avatar, :only_process => [:small]
+  end
+</code></pre>
+
+Like paperclip, you could also supply a lambda function to define only_process dynamically.
+
+<pre><code>
+  class User < ActiveRecord::Base
+    has_attached_file :avatar, :styles => { :small => "25x25#", :medium => "50x50x" }
+
+    process_in_background :avatar, :only_process => lambda { |a| a.instance.small_supported? ? [:small, :large] : [:large] }
   end
 </code></pre>
 
@@ -142,6 +181,28 @@ styles as arguments anymore.  It will delegate to DelayedPaperclip and reprocess
   @user.avatar.reprocess_without_delay!(:medium)
 </code></pre>
 
+h2. Defaults
+
+Global defaults for all delayed_paperclip instances in your app can be defined by changing the
+DelayedPaperclip.options Hash, this can be useful for setting a default 'processing image,' so you
+won't have to define it in every process_in_background definition.
+
+If you're using Rails you can define a Hash with default options in config/application.rb or in any
+of the config/environments/*.rb files on config.delayed_paperclip_defaults, these will get merged into
+DelayedPaperclip.options as your Rails app boots. An example:
+
+<pre><code>
+  module YourApp
+    class Application < Rails::Application
+      # Other code...
+
+      config.delayed_paperclip_defaults = {
+          :url_with_processing => true,
+          :processing_image_url => 'custom_processing.png'
+      }
+    end
+  end
+</code></pre>
 
 h2. What if I'm not using images?
 
@@ -153,4 +214,6 @@ Yes.
 
 h2. Contributing
 
-Checkout out CONTRIBUTING for more info.
+Checkout out CONTRIBUTING.  In short, you'll need a redis server running for testing.  Run all tests with
+
+<pre><code>rake</code></pre>
